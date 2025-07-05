@@ -1,0 +1,2 @@
+# Sistema de Processamento de Pedidos Online
+Este projeto é um sistema de processamento de pedidos online desenvolvido como um estudo aprofundado em arquiteturas de microsserviços, focando na implementação de padrões de projeto avançados para garantir **resiliência**, **escalabilidade** e **observabilidade**. Ele simula um fluxo de pedido que envolve múltiplos serviços, como gerenciamento de pedidos, estoque, pagamento e notificações.

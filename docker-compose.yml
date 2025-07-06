@@ -1,0 +1,201 @@
+
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  postgres:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=pedidos_db
+    volumes:
+      - ./data/postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "15432:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+    networks:
+      - app-network
+    restart: unless-stopped
+  
+  # --- Kafka UI ---
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: Local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - app-network
+  
+  # --- Frontend ---
+  
+  frontend:
+    build: Frontend/Web
+    image: frontend:latest
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_GATEWAY_URL: http://localhost:8080
+    networks:
+      - app-network
+      
+  # --- Microsserviços ---
+  api-gateway:
+    build: Backend/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker 
+    depends_on:
+      - ms-pedidos
+      - ms-estoque
+      - ms-pagamento
+      - ms-notificacao
+    networks:
+      - app-network
+
+  ms-pedidos:
+    build: Backend/ms-pedidos
+    container_name: ms-pedidos
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-pedidos:5432/pedidos_db
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8081:8081" 
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - app-network
+
+  ms-estoque:
+    build: Backend/ms-estoque
+    container_name: ms-estoque
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-estoque:5432/estoque_db
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8082:8082"
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - app-network
+  ms-pagamento:
+    build: Backend/ms-pagamento
+    container_name: ms-pagamento
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-pagamento:5432/pagamento_db
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8083:8083"
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - app-network
+  ms-notificacao:
+    build: Backend/ms-notificacao
+    container_name: ms-notificacao
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notificacao:5432/notificacao_db
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8084:8084"
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - app-network
+      
+  # --- Observabilidade ---
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./Backend/monitoring/prometheus:/etc/prometheus
+    command: --config.file=/etc/prometheus/prometheus.yaml
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+      GF_AUTH_ANONYMOUS_ENABLED: true # Para acesso mais fácil em dev
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    volumes:
+      - ./Backend/monitoring/grafana:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60.0
+    container_name: jaeger
+    ports:
+      - "6831:6831/udp" # UDP para agente
+      - "16686:16686" # UI do Jaeger
+      - "14268:14268" # Receber traces via HTTP
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

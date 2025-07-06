@@ -1,0 +1,48 @@
+server:
+  port: 8080 
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: pedidos-route
+          uri: lb://ms-pedidos # Se usar Eureka, ou http://localhost:8081 se não
+          predicates:
+            - Path=/pedidos/**
+          filters:
+            - RewritePath=/pedidos/(?<segment>.*), /${segment}
+            - name: RequestRateLimiter 
+              args:
+                redis-rate-limiter.replenishRate: 10 # 
+                redis-rate-limiter.burstCapacity: 20 
+            - CircuitBreaker=pedidosService
+            - CircuitBreaker=estoqueService
+            - CircuitBreaker=pagamentoService
+            - CircuitBreaker=notificacaoService
+
+        - id: estoque-route
+          uri: lb://ms-estoque
+          predicates:
+            - Path=/estoque/**
+          filters:
+            - RewritePath=/estoque/(?<segment>.*), /${segment}
+        - id: pagamento-route
+          uri: lb://ms-pagamento
+          predicates:
+            - Path=/pagamento/**
+          filters:
+            - RewritePath=/pagamento/(?<segment>.*), /${segment}
+        - id: notificacao-route
+          uri: lb://ms-notificacao
+          predicates:
+            - Path=/notificacao/**
+          filters:
+            - RewritePath=/notificacao/(?<segment>.*), /${segment}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus

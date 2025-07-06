@@ -1,0 +1,71 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: ms-estoque
+  datasource:
+    url: jdbc:postgresql://postgres-pedidos:5432/estoque_db
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  kafka:
+    bootstrap-servers: kafka:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false 
+    consumer:
+      group-id: pedidos-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: com.onlineordersystem.common.events.AlgumEventoQueConsome
+
+# Configurações do Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# Configurações do Resilience4j
+resilience4j.circuitbreaker:
+  instances:
+    estoqueService:
+      registerHealthIndicator: true
+      failureRateThreshold: 50
+      minimumNumberOfCalls: 5
+      slidingWindowType: COUNT_BASED
+      slidingWindowSize: 10
+      waitDurationInOpenState: 5s
+      permittedNumberOfCallsInHalfOpenState: 3
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+    pagamentoService:
+      registerHealthIndicator: true
+      failureRateThreshold: 50
+      minimumNumberOfCalls: 5
+      slidingWindowType: COUNT_BASED
+      slidingWindowSize: 10
+      waitDurationInOpenState: 5s
+      permittedNumberOfCallsInHalfOpenState: 3
+      automaticTransitionFromOpenToHalfOpenEnabled: true
+
+resilience4j.retry:
+  instances:
+    estoqueServiceRetry:
+      maxAttempts: 3
+      waitDuration: 1s
+      retryExceptions:
+        - org.springframework.web.client.ResourceAccessException

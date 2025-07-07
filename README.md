@@ -128,7 +128,7 @@ Este projeto serve como um estudo prático dos seguintes padrões e conceitos:
 ---
 
 ### Estrutura do Projeto
-
+```plaintext
 O projeto é organizado como um repositório multi-módulo Maven (ou Gradle), com as seguintes divisões principais:
 Backend
 ├── api-gateway/            # Módulo do API Gateway
@@ -140,10 +140,10 @@ Backend
 ├── ms-pagamento/           # Microsserviço de Pagamento
 ├── ms-notificacao/         # Microsserviço de Notificações
 ├── monitoring/             # Configurações para Prometheus, Grafana, Jaeger
-└── kubernetes/             # (Opcional) Manifestos Kubernetes para deploy
+└── kubernetes/             # Manifestos Kubernetes para deploy
 Frontend
 ├──Web(Angular)             #Frontend simples em Angular para testes de API
-
+```
 ---
 
 ### Como Executar o Projeto
@@ -210,4 +210,4 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ---
 
-**Desenvolvido por:** [Thalyson/nooneknowws]
+**Desenvolvido por:** ![Thalyson](https://github.com/nooneknowws)

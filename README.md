@@ -57,11 +57,6 @@ Este projeto serve como um estudo prático dos seguintes padrões e conceitos:
 
 ---
 
-### Estrutura do Projeto
-
-O projeto é organizado como um repositório multi-módulo Maven (ou Gradle), com as seguintes divisões principais:
-
-Markdown
 
 # Sistema de Processamento de Pedidos Online: Resiliência e Observabilidade
 
@@ -128,8 +123,8 @@ Este projeto serve como um estudo prático dos seguintes padrões e conceitos:
 ---
 
 ### Estrutura do Projeto
+O projeto é organizado como um repositório multi-módulo Maven, com as seguintes divisões principais:
 ```plaintext
-O projeto é organizado como um repositório multi-módulo Maven (ou Gradle), com as seguintes divisões principais:
 Backend
 ├── api-gateway/            # Módulo do API Gateway
 ├── common-libs/            # Módulos para DTOs e Eventos compartilhados
@@ -152,14 +147,14 @@ Para colocar o projeto em funcionamento, siga as instruções abaixo:
 
 #### Pré-requisitos:
 
-* Docker e Docker Compose instalados.
+* Docker instalado.
 * Node.js e Angular CLI instalados globalmente (para o frontend).
 * Java Development Kit (JDK) 17 ou superior.
-* Maven ou Gradle (se for construir os JARs manualmente antes do Docker).
+* Maven (se for construir os JARs manualmente antes do Docker).
 
 #### 1. Backend (Microsserviços e Infraestrutura Local)
 
-1.  Navegue até a pasta raiz do projeto no seu terminal (`root-project/`).
+1.  Navegue até a pasta raiz do projeto no seu terminal 
 2.  Execute o seguinte comando para construir as imagens Docker dos microsserviços e iniciar todos os serviços definidos no `docker-compose.yml` (Kafka, Prometheus, Grafana, Jaeger, etc.):
 
     ```bash
@@ -169,7 +164,7 @@ Para colocar o projeto em funcionamento, siga as instruções abaixo:
 
 #### 2. Frontend
 
-1.  Navegue até a pasta do frontend (assumindo uma pasta `frontend-app/` na raiz do projeto).
+1.  Navegue até a pasta do frontend (`Frontend/Web` na raiz do projeto).
 2.  Instale as dependências do projeto:
 
     ```bash
@@ -188,8 +183,6 @@ Após esses passos, o API Gateway estará acessível em uma porta definida (8080
 ---
 
 ### Melhorias e Próximos Passos (Senioridade)
-
-Este projeto serve como uma base robusta. Para continuar a evolução em senioridade, você pode explorar:
 
 * **Testes Abrangentes:** Adicionar testes de unidade, integração e end-to-end.
 * **Segurança:** Implementar segurança mais robusta (ex: JWT, Spring Security) em todos os serviços.
